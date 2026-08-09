@@ -4,6 +4,12 @@ const chips: string[] = [
   "۵ تا ۱۵ میلیون",
   "بالای 5 میلیون",
 ];
+const categoryMap: Record<string, string> = {
+  مردانه: "men's clothing",
+  زنانه: "women's clothing",
+  الکترونیک: "electronics",
+  جواهرات: "jewelery",
+};
 
 export default function Sidebar() {
   return (
@@ -12,6 +18,21 @@ export default function Sidebar() {
       <h2 className="mb-3 border-b border-b-(--border) pb-3 text-[15px] font-bold text-(--text-primary)">
         فیلترها
       </h2>
+      {/* دسته بندی ها */}
+      <div className="mb-4 flex cursor-default flex-col gap-2">
+        <p className="mb-1 text-xs text-(--text-muted)">دسته بندی‌ها</p>
+        {/* چیپ‌ها */}
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(categoryMap).map(([persian, english]) => (
+            <button
+              key={english}
+              className="cursor-pointer rounded-full border border-(--border-light) bg-(--bg-3) px-3.5 py-2 text-right text-xs text-(--text-primary) transition duration-150"
+            >
+              {persian}
+            </button>
+          ))}
+        </div>
+      </div>
       {/* لیبل */}
       <div className="flex cursor-default flex-col gap-2">
         <p className="mb-1 text-xs text-(--text-muted)">محدوده قیمت</p>
