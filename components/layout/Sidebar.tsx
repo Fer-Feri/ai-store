@@ -2,7 +2,7 @@ const chips: string[] = [
   "همه",
   "زیر ۵ میلیون",
   "۵ تا ۱۵ میلیون",
-  "بالای 5 میلیون",
+  "بالای 15 میلیون",
 ];
 const categoryMap: Record<string, string> = {
   مردانه: "men's clothing",
@@ -11,7 +11,21 @@ const categoryMap: Record<string, string> = {
   جواهرات: "jewelery",
 };
 
-export default function Sidebar() {
+type SidebarProps = {
+  selectedCategory: string;
+  selectedPrice: string;
+  onCategoryChange: (val: string) => void;
+  onPriceChange: (val: string) => void;
+  onReset: () => void;
+};
+
+export default function Sidebar({
+  selectedCategory,
+  selectedPrice,
+  onCategoryChange,
+  onPriceChange,
+  onReset,
+}: SidebarProps) {
   return (
     <aside className="flex shrink-0 flex-col gap-2 rounded-2xl border border-(--border) bg-(--bg-2) px-4 py-6 md:w-60">
       {/* عنوان */}
@@ -25,15 +39,23 @@ export default function Sidebar() {
         <div className="flex flex-wrap gap-2">
           {Object.entries(categoryMap).map(([persian, english]) => (
             <button
+              onClick={() =>
+                // اگه همین دسته انتخابه → deselect، وگرنه → select
+                onCategoryChange(selectedCategory === english ? "" : english)
+              }
               key={english}
-              className="cursor-pointer rounded-full border border-(--border-light) bg-(--bg-3) px-3.5 py-2 text-right text-xs text-(--text-primary) transition duration-150"
+              className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs transition duration-150${
+                selectedCategory === english
+                  ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                  : "border-(--border-light) bg-(--bg-3) text-(--text-primary)"
+              }`}
             >
               {persian}
             </button>
           ))}
         </div>
       </div>
-      {/* لیبل */}
+      {/* قیمت ها */}
       <div className="flex cursor-default flex-col gap-2">
         <p className="mb-1 text-xs text-(--text-muted)">محدوده قیمت</p>
         {/* چیپ‌ها */}
@@ -41,7 +63,12 @@ export default function Sidebar() {
           {chips.map((chip) => (
             <button
               key={chip}
-              className="cursor-pointer rounded-full border border-(--border-light) bg-(--bg-3) px-3.5 py-2 text-right text-xs text-(--text-primary) transition duration-150"
+              onClick={() => onPriceChange(chip)}
+              className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs transition duration-150 ${
+                selectedPrice === chip
+                  ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                  : "border-(--border-light) bg-(--bg-3) text-(--text-primary)"
+              }`}
             >
               {chip}
             </button>
@@ -49,7 +76,10 @@ export default function Sidebar() {
         </div>
       </div>
       {/* دکمه ریست */}
-      <button className="mt-4 cursor-pointer rounded-full border border-red-500/30 bg-red-500/5 px-3.5 py-2 text-xs text-red-400">
+      <button
+        onClick={() => onReset()}
+        className="mt-4 cursor-pointer rounded-full border border-red-500/30 bg-red-500/5 px-3.5 py-2 text-xs text-red-400"
+      >
         پاک کردن فیلتر
       </button>
     </aside>

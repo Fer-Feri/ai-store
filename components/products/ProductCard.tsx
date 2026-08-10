@@ -11,7 +11,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Image */}
       <div className="relative flex h-48 w-full items-center justify-center bg-(--bg-3) p-4">
         <Image
-          src={product.image}
+          src={product.image || "/images/itachi.jpg"}
           alt={product.title}
           fill
           className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
