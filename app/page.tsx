@@ -1,4 +1,5 @@
 "use client";
+
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import ProductGrid from "@/components/products/ProductGrid";
@@ -6,40 +7,58 @@ import { Product } from "@/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 const LIMIT = 8;
-const TOMAN_RATE = 140000;
+const TOMAN_RATE = 180_000;
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0); // offset → از کجا شروع کنیم؟ اول: 0، بعد: 8، بعد: 16...
-  const [hasMore, sethasMore] = useState(true); // hasMore → آیا محصول بیشتری وجود داره؟
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
-  const [selectCategory, setSelectCategoty] = useState<string>("");
-  const [selectPrice, setSelectPrice] = useState<string>("همه");
+  const [selectCategory, setSelectCategory] = useState("");
+  const [selectPrice, setSelectPrice] = useState("همه");
 
-  // useCallback → این تابع رو cache میکنه، هر render دوباره ساخته نمیشه
+  // آیا نتایج فعلی از جستجوی هوشمند آمده‌اند؟
+  const [isAiSearch, setIsAiSearch] = useState(false);
+
+  /**
+   * دریافت محصولات عادی از Fake Store API
+   */
   const fetchProducts = useCallback(
     async (currentOffset: number, category: string = "") => {
       setLoading(true);
       setError(null);
 
       const url = category
-        ? `https://fakestoreapi.com/products/category/${encodeURIComponent(category)}?limit=${LIMIT}&offset=${currentOffset}`
+        ? `https://fakestoreapi.com/products/category/${encodeURIComponent(
+            category,
+          )}?limit=${LIMIT}&offset=${currentOffset}`
         : `https://fakestoreapi.com/products?limit=${LIMIT + currentOffset}`;
 
       try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error("خطا در دریافت محصولات");
+
+        if (!response.ok) {
+          throw new Error("خطا در دریافت محصولات");
+        }
 
         const data: Product[] = await response.json();
 
         setProducts(data);
-        sethasMore(data.length >= LIMIT + currentOffset); // اگه تعداد برگشتی کمتر از LIMIT بود یعنی دیگه محصولی نداره
-      } catch (error: unknown) {
-        if (error instanceof Error) setError(error.message);
+
+        /**
+         * در حالت عادی، اگر تعداد محصولات دریافتی
+         * به اندازه صفحه فعلی باشد، احتمالاً محصول بیشتری وجود دارد.
+         */
+        setHasMore(data.length >= LIMIT + currentOffset);
+      } catch (err: unknown) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "خطای ناشناخته در دریافت محصولات",
+        );
       } finally {
         setLoading(false);
       }
@@ -47,67 +66,175 @@ export default function Home() {
     [],
   );
 
-  // اولین بار که صفحه لود میشه
+  /**
+   * بارگذاری اولیه و تغییر دسته‌بندی
+   *
+   * اگر در حالت AI باشیم، نباید نتایج AI با محصولات عادی
+   * جایگزین شوند.
+   */
   useEffect(() => {
+    if (isAiSearch) return;
+
     setOffset(0);
     fetchProducts(0, selectCategory);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectCategory]);
+  }, [selectCategory, isAiSearch, fetchProducts]);
 
+  /**
+   * بارگذاری محصولات بیشتر در حالت عادی
+   */
   const handleLoadMore = () => {
+    if (isAiSearch || !hasMore || loading) return;
+
     const newOffset = offset + LIMIT;
+
     setOffset(newOffset);
     fetchProducts(newOffset, selectCategory);
   };
 
+  /**
+   * برگشت به صفحه قبلی در حالت عادی
+   */
   const handleLoadLess = () => {
-    if (offset <= 0) return;
+    if (isAiSearch || offset <= 0 || loading) return;
+
     const newOffset = offset - LIMIT;
+
     setOffset(newOffset);
     fetchProducts(newOffset, selectCategory);
   };
 
-  // -----------------------------------------------
+  /**
+   * اعمال فیلتر قیمت سمت کلاینت
+   */
   const filteredProducts = useMemo(() => {
-    if (selectPrice === "همه") return products;
+    if (selectPrice === "همه") {
+      return products;
+    }
 
-    const priceInToman = products.map((product) => ({
+    const productsWithTomanPrice = products.map((product) => ({
       ...product,
       toman: product.price * TOMAN_RATE,
     }));
-    if (selectPrice === "زیر ۵ میلیون")
-      return priceInToman.filter((p) => p.toman < 5_000_000);
-    if (selectPrice === "۵ تا ۱۵ میلیون")
-      priceInToman.filter((p) => p.toman >= 5_000_000 && p.toman <= 15_000_000);
-    return priceInToman.filter((p) => p.toman > 15_000_000);
+
+    if (selectPrice === "زیر ۵ میلیون") {
+      return productsWithTomanPrice.filter(
+        (product) => product.toman < 5_000_000,
+      );
+    }
+
+    if (selectPrice === "۵ تا ۱۵ میلیون") {
+      return productsWithTomanPrice.filter(
+        (product) => product.toman >= 5_000_000 && product.toman <= 15_000_000,
+      );
+    }
+
+    return productsWithTomanPrice.filter(
+      (product) => product.toman > 15_000_000,
+    );
   }, [products, selectPrice]);
 
-  // -----------------------------------------------
+  /**
+   * جستجوی هوشمند با API داخلی
+   */
+  const handleSearch = async (query: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        throw new Error("خطا در جستجوی هوشمند");
+      }
+
+      const data: {
+        intent: {
+          category: string | null;
+          keyword: string | null;
+          maxPrice: number | null;
+        };
+        results: Product[];
+      } = await response.json();
+
+      /**
+       * اول حالت AI را فعال می‌کنیم تا useEffect
+       * نتایج را دوباره از Fake Store API نگیرد.
+       */
+      setIsAiSearch(true);
+
+      setProducts(data.results);
+      setOffset(0);
+
+      // نتایج AI صفحه‌بندی ندارند
+      setHasMore(false);
+
+      // فیلترهای قبلی Sidebar روی نتایج AI اعمال نشوند
+      setSelectCategory("");
+      setSelectPrice("همه");
+
+      console.log("🔎 Search intent:", data.intent);
+      console.log("📦 AI results:", data.results);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "خطای ناشناخته در جستجوی هوشمند",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * تغییر دسته‌بندی Sidebar
+   */
+  const handleCategoryChange = (value: string) => {
+    // با انتخاب دسته‌بندی، از حالت AI خارج می‌شویم
+    setIsAiSearch(false);
+    setSelectCategory(value);
+    setSelectPrice("همه");
+    setOffset(0);
+  };
+
+  /**
+   * Reset کامل صفحه
+   */
+  const handleReset = () => {
+    // تغییر این مقدار باعث می‌شود useEffect دوباره محصولات عادی را بگیرد
+    setIsAiSearch(false);
+
+    setSelectCategory("");
+    setSelectPrice("همه");
+    setOffset(0);
+    setError(null);
+  };
 
   return (
     <main className="flex min-h-screen flex-col gap-4 p-10">
-      <Header />
+      <Header onSearch={handleSearch} />
+
       <div className="mt-2 flex flex-col flex-wrap gap-6 md:flex-row">
         <Sidebar
           selectedCategory={selectCategory}
           selectedPrice={selectPrice}
-          onCategoryChange={(val) => setSelectCategoty(val)}
-          onPriceChange={(val) => setSelectPrice(val)}
-          onReset={() => {
-            setSelectCategoty("");
-            setSelectPrice("همه");
-            setOffset(0);
-          }}
+          onCategoryChange={handleCategoryChange}
+          onPriceChange={(value) => setSelectPrice(value)}
+          onReset={handleReset}
         />
+
         <ProductGrid
           products={products}
           filteredProducts={filteredProducts}
           loading={loading}
           error={error}
-          hasMore={hasMore}
+          hasMore={!isAiSearch && hasMore}
           onLoadMore={handleLoadMore}
           onLoadLess={handleLoadLess}
-          canShowLess={offset > 0}
+          canShowLess={!isAiSearch && offset > 0}
         />
       </div>
     </main>

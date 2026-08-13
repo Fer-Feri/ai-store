@@ -1,4 +1,18 @@
-export default function Header() {
+"use client";
+import { useState } from "react";
+
+type HeaderProps = {
+  onSearch: (query: string) => void;
+};
+
+export default function Header({ onSearch }: HeaderProps) {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && inputValue.trim()) {
+      onSearch(inputValue.trim());
+    }
+  };
   return (
     <header className="flex w-full cursor-default flex-col gap-2 rounded-2xl border border-(--border) bg-(--bg-2) px-6 py-3 md:h-16 md:flex-row md:items-center md:gap-4 md:py-0">
       {/* ردیف اول: لوگو + badge */}
@@ -18,7 +32,10 @@ export default function Header() {
         </span>
         <input
           type="text"
-          placeholder="مثلاً: کت مجلسی زیر ۵۰۰ هزار..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="مثلاً: لباس مردانه زیر 5 میلیون..."
           className="h-10 w-full rounded-xl border border-(--border) bg-(--bg-3) pr-9 pl-4 text-sm text-(--text-primary) outline-none placeholder:text-(--text-muted) focus:border-(--neon-border)"
         />
       </div>
