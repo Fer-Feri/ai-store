@@ -235,6 +235,10 @@ export default function Home() {
           onLoadMore={handleLoadMore}
           onLoadLess={handleLoadLess}
           canShowLess={!isAiSearch && offset > 0}
+          isEmpty={
+            (isAiSearch && products.length === 0) ||
+            filteredProducts.length === 0
+          }
         />
       </div>
     </main>

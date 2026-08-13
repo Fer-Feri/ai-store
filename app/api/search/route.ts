@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
           "X-Title": "AI Store",
         },
         body: JSON.stringify({
-          model: process.env.AI_MODEL,
+          model: process.env.AI_MODEL || "google/gemini-2.5-flash",
           temperature: 0,
           response_format: {
             type: "json_object",
