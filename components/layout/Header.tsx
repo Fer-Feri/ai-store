@@ -13,6 +13,14 @@ export default function Header({ onSearch }: HeaderProps) {
       onSearch(inputValue.trim());
     }
   };
+
+  // دکمه جستجو
+  const handleSearchKey = () => {
+    if (inputValue.trim()) {
+      onSearch(inputValue.trim());
+    }
+  };
+
   return (
     <header className="flex w-full cursor-default flex-col gap-2 rounded-2xl border border-(--border) bg-(--bg-2) px-6 py-3 md:h-16 md:flex-row md:items-center md:gap-4 md:py-0">
       {/* ردیف اول: لوگو + badge */}
@@ -27,9 +35,12 @@ export default function Header({ onSearch }: HeaderProps) {
 
       {/* سرچ */}
       <div className="relative flex-1 px-0 md:px-4">
-        <span className="absolute top-1/2 left-2 -translate-y-1/2 text-(--text-muted) md:left-6">
-          🔍
-        </span>
+        <button
+          onKeyDown={(event) => event.key === "Enter" && handleSearchKey()}
+          className="absolute top-1/2 left-1 -translate-y-1/2 rounded-lg border border-(--neon-border) bg-(--neon-bg) px-3 py-1 text-xs text-(--neon) transition-all hover:bg-(--neon) hover:text-black disabled:cursor-not-allowed disabled:opacity-30 md:left-5"
+        >
+          جستجو
+        </button>
         <input
           type="text"
           value={inputValue}

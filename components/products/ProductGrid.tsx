@@ -14,7 +14,6 @@ type ProductsGridProps = {
 };
 
 export default function ProductGrid({
-  products,
   filteredProducts,
   loading,
   error,
