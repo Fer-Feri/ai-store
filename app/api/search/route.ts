@@ -12,6 +12,16 @@ const ALLOWED_CATEGORIES = [
 
 type Category = (typeof ALLOWED_CATEGORIES)[number];
 
+type AIChoiceMessage = {
+  message?: {
+    content?: string;
+  };
+};
+
+type AICompletionResponse = {
+  choices?: AIChoiceMessage[];
+};
+
 // *۲ ===> خروجی استانداردی که از AI می‌خواهیم
 type SearchIntent = {
   category: Category | null;
@@ -207,23 +217,31 @@ ${ALLOWED_CATEGORIES.join(", ")}
 
     // if (!aiResponse.ok) throw new Error("OpenAI request failed");
     if (!aiResponse.ok) {
-      // 🔍 ببین سرویس واقعاً چه می‌گوید
       const errorBody = await aiResponse.text();
-      console.error("🔴 AI status:", aiResponse.status);
-      console.error("🔴 AI body:", errorBody);
-      throw new Error("OpenAI request failed");
+      console.error("AI status:", aiResponse.status);
+      console.error("AI body:", errorBody);
+
+      return NextResponse.json(
+        {
+          error: "خطا در سرویس جستجوی هوشمند",
+          details: errorBody,
+        },
+        { status: aiResponse.status },
+      );
     }
 
-    const aiData = await aiResponse.json();
+    const aiData = (await aiResponse.json()) as AICompletionResponse;
+    const rawContent = aiData.choices?.[0]?.message?.content;
 
-    let parsed: any;
+    let parsed: unknown = {};
 
-    try {
-      parsed = JSON.parse(aiData?.choices?.[0]?.message?.content);
-    } catch {
-      parsed = {}; //اگر JSON خراب بود، خالی بگذار
+    if (typeof rawContent === "string") {
+      try {
+        parsed = JSON.parse(rawContent);
+      } catch {
+        parsed = {};
+      }
     }
-
     // *۹ ===> عبور از نگهبان
     const intent = clampIntent(parsed);
 

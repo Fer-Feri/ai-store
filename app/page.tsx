@@ -46,6 +46,7 @@ export default function Home() {
 
         const data: Product[] = await response.json();
 
+        setOffset(currentOffset);
         setProducts(data);
 
         /**
@@ -75,8 +76,9 @@ export default function Home() {
   useEffect(() => {
     if (isAiSearch) return;
 
-    setOffset(0);
-    fetchProducts(0, selectCategory);
+    void (async () => {
+      await fetchProducts(0, selectCategory);
+    })();
   }, [selectCategory, isAiSearch, fetchProducts]);
 
   /**
@@ -87,7 +89,6 @@ export default function Home() {
 
     const newOffset = offset + LIMIT;
 
-    setOffset(newOffset);
     fetchProducts(newOffset, selectCategory);
   };
 
@@ -99,7 +100,6 @@ export default function Home() {
 
     const newOffset = offset - LIMIT;
 
-    setOffset(newOffset);
     fetchProducts(newOffset, selectCategory);
   };
 
@@ -149,18 +149,29 @@ export default function Home() {
         body: JSON.stringify({ query }),
       });
 
+      const payload = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error("خطا در جستجوی هوشمند");
+        const serverError =
+          payload && typeof payload === "object" && "error" in payload
+            ? (payload as { error?: unknown }).error
+            : null;
+
+        throw new Error(
+          typeof serverError === "string"
+            ? serverError
+            : "خطا در جستجوی هوشمند",
+        );
       }
 
-      const data: {
+      const data = payload as {
         intent: {
           category: string | null;
           keyword: string | null;
           maxPrice: number | null;
         };
         results: Product[];
-      } = await response.json();
+      };
 
       /**
        * اول حالت AI را فعال می‌کنیم تا useEffect
@@ -197,7 +208,6 @@ export default function Home() {
     setIsAiSearch(false);
     setSelectCategory(value);
     setSelectPrice("همه");
-    setOffset(0);
   };
 
   /**
