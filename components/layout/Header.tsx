@@ -36,7 +36,7 @@ export default function Header({ onSearch }: HeaderProps) {
       {/* سرچ */}
       <div className="relative flex-1 px-0 md:px-4">
         <button
-          onKeyDown={(event) => event.key === "Enter" && handleSearchKey()}
+          onClick={handleSearchKey}
           className="absolute top-1/2 left-1 -translate-y-1/2 rounded-lg border border-(--neon-border) bg-(--neon-bg) px-3 py-1 text-xs text-(--neon) transition-all hover:bg-(--neon) hover:text-black disabled:cursor-not-allowed disabled:opacity-30 md:left-5"
         >
           جستجو
