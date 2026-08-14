@@ -1,5 +1,6 @@
 import { Product } from "@/types";
 import { NextRequest, NextResponse } from "next/server";
+import { createOpenAI } from "@ai-sdk/openai";
 
 const EXCHANGE_RATE = 180_000;
 // *۱ ===> دسته‌بندی‌های مجاز (همان‌هایی که fakestoreapi دارد)
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
           "X-Title": "AI Store",
         },
         body: JSON.stringify({
-          model: process.env.AI_MODEL || "google/gemma-3-27b-it:free",
+          model: "deepseek/deepseek-chat-v3",
           temperature: 0,
           response_format: {
             type: "json_object",
