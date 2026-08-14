@@ -1,6 +1,5 @@
 import { Product } from "@/types";
 import { NextRequest, NextResponse } from "next/server";
-import { createOpenAI } from "@ai-sdk/openai";
 
 const EXCHANGE_RATE = 180_000;
 // *۱ ===> دسته‌بندی‌های مجاز (همان‌هایی که fakestoreapi دارد)
