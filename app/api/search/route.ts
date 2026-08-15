@@ -161,24 +161,24 @@ export async function POST(request: NextRequest) {
     const safeQuery = toEnglishDigits(useQuery).slice(0, 220);
 
     //*! test
-    console.log("GROQ MODEL:", process.env.GROQ_MODEL);
+    // console.log("GROQ MODEL:", process.env.GROQ_MODEL);
     console.log(
       "GROQ KEY:",
-      process.env.GROQ_API_KEY
-        ? `${process.env.GROQ_API_KEY.slice(0, 8)}...`
+      process.env.GAPGPT_API_KEY
+        ? `${process.env.GAPGPT_API_KEY.slice(0, 8)}...`
         : "MISSING",
     );
 
     const aiResponse = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
+      "https://api.gapgpt.app/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          Authorization: `Bearer ${process.env.GAPGPT_API_KEY}`,
         },
         body: JSON.stringify({
-          model: process.env.GROQ_MODEL,
+          model: "gpt-4o-mini",
           temperature: 0,
           response_format: {
             type: "json_object",
