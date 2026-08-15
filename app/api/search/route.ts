@@ -1,5 +1,6 @@
 import { Product } from "@/types";
 import { NextRequest, NextResponse } from "next/server";
+import products from "@/app/data/products.json";
 
 const EXCHANGE_RATE = 180_000;
 // *۱ ===> دسته‌بندی‌های مجاز (همان‌هایی که fakestoreapi دارد)
@@ -138,12 +139,12 @@ const filterProduct = (
 };
 
 // *۶ ===> ساخت آدرس جستجوی محصول
-const buildProductUrl = (intent: SearchIntent): string => {
-  if (intent.category) {
-    return `https://fakestoreapi.com/products/category/${encodeURIComponent(intent.category)}`;
-  }
-  return "https://fakestoreapi.com/products";
-};
+// const buildProductUrl = (intent: SearchIntent): string => {
+//   if (intent.category) {
+//     return `https://fakestoreapi.com/products/category/${encodeURIComponent(intent.category)}`;
+//   }
+//   return "https://fakestoreapi.com/products";
+// };
 
 // *۷ ===> بدنه اصلی: Route Handler
 export async function POST(request: NextRequest) {
@@ -256,19 +257,21 @@ ${ALLOWED_CATEGORIES.join(", ")}
     console.log("✅ Clamped intent:", intent);
 
     // *۱۰ ===> گرفتن محصولات و فیلتر
-    const producUrl = buildProductUrl(intent);
-    console.log("🛒 Product URL:", producUrl);
+    // const producUrl = buildProductUrl(intent);
+    // console.log("🛒 Product URL:", producUrl);
 
-    const productResponse = await fetch(producUrl);
-    if (!productResponse.ok) {
-      const errorText = await productResponse.text();
+    // const productResponse = await fetch(producUrl);
+    // if (!productResponse.ok) {
+    //   const errorText = await productResponse.text();
 
-      console.error("❌ Product API:", productResponse.status, errorText);
+    //   console.error("❌ Product API:", productResponse.status, errorText);
 
-      throw new Error(`Failed to fetch products: ${productResponse.status}`);
-    }
+    //   throw new Error(`Failed to fetch products: ${productResponse.status}`);
+    // }
 
-    const products: Product[] = await productResponse.json();
+    // const products: Product[] = await productResponse.json();
+    // const results = filterProduct(products, intent).slice(0, 8);
+
     const results = filterProduct(products, intent).slice(0, 8);
 
     return NextResponse.json({ intent, results });
