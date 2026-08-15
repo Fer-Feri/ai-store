@@ -140,7 +140,7 @@ const filterProduct = (
 // *۶ ===> ساخت آدرس جستجوی محصول
 const buildProductUrl = (intent: SearchIntent): string => {
   if (intent.category) {
-    return `https://fakestoreapi.com/products/category/${intent.category}`;
+    return `https://fakestoreapi.com/products/category/${encodeURIComponent(intent.category)}`;
   }
   return "https://fakestoreapi.com/products";
 };
@@ -160,19 +160,25 @@ export async function POST(request: NextRequest) {
     // محدودیت طول برای جلوگیری از سوءاستفاده/هزینه
     const safeQuery = toEnglishDigits(useQuery).slice(0, 220);
 
+    //*! test
+    console.log("GROQ MODEL:", process.env.GROQ_MODEL);
+    console.log(
+      "GROQ KEY:",
+      process.env.GROQ_API_KEY
+        ? `${process.env.GROQ_API_KEY.slice(0, 8)}...`
+        : "MISSING",
+    );
+
     const aiResponse = await fetch(
-      process.env.AI_BASE_URL ??
-        "https://openrouter.ai/api/v1/chat/completions",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.AI_API_KEY}`,
-          "HTTP-Referer": "http://localhost:3000",
-          "X-Title": "AI Store",
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "deepseek/deepseek-chat-v3",
+          model: process.env.GROQ_MODEL,
           temperature: 0,
           response_format: {
             type: "json_object",
@@ -251,15 +257,30 @@ ${ALLOWED_CATEGORIES.join(", ")}
 
     // *۱۰ ===> گرفتن محصولات و فیلتر
     const producUrl = buildProductUrl(intent);
+    console.log("🛒 Product URL:", producUrl);
+
     const productResponse = await fetch(producUrl);
-    if (!productResponse.ok) throw new Error("Failed to fetch products");
+    if (!productResponse.ok) {
+      const errorText = await productResponse.text();
+
+      console.error("❌ Product API:", productResponse.status, errorText);
+
+      throw new Error(`Failed to fetch products: ${productResponse.status}`);
+    }
 
     const products: Product[] = await productResponse.json();
     const results = filterProduct(products, intent).slice(0, 8);
 
     return NextResponse.json({ intent, results });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "خطای داخلی سرور" }, { status: 500 });
+    console.error("❌ SEARCH ERROR:", error);
+
+    return NextResponse.json(
+      {
+        error: "خطای داخلی سرور",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }
